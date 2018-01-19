@@ -86,11 +86,42 @@ def xewgrdel(RIR, fs):
     RIR2 = RIR ** 2
     yn = signal.lfilter(ghwn, [1], RIR2)
     yd = signal.lfilter(ghw, [1], RIR2)
-    yd[abs(yd) < 1] = 10
+    yd[abs(yd) < 10**-16] = 10**-16  # It prevents infinity
+    y = yn[gw-1:] / yd[gw-1:]
+    toff = (gw - 1) / 2
+    fw = np.int_(2 * np.floor(dy_fwlen*fs/2) + 1)  # Force window length to be odd
+    if fw > 1:
+        daw = signal.hamming(fw, 1)
+        y = signal.lfilter(daw, [1], y) / np.sum(daw)  # Low pass filtering
+        toff = toff - (fw - 1)/2
+
+    tew, sew = zerocross(x=y, m='n')  # Finding zero crossing
+
+    tew = tew + toff
+
+    return tew, sew, y, toff
 
 
+def zerocross(x, m='b'):
+    # This code is translated from the original version that was in Matlab, within the VOICEBOX toolbox
+    # zerocross finds the zeros crossing in a signal
 
-    return 0 #tew, sew, y, toff
+    x[abs(x) < 10**-5] = 0
+
+    s = x >= 0
+    s = np.int_(np.array(s))  # Converting false to 0 and true to 1
+    k = s[1:] - s[:-1]
+    if m is 'p':
+        f = np.where(k > 0)
+    elif m is 'n':
+        f = np.where(k < 0)
+    else:
+        f = k != 0
+
+    s = x[f + 1] - x[f]
+
+
+    return t, s
 
 
 def clustering_dypsa():
