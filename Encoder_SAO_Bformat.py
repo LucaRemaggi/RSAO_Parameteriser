@@ -49,7 +49,7 @@
 
 import numpy as np
 import sys
-from Algorithm_PeakDetection import Algorithm_PeakDetection
+from Algorithm_PeakDetection import peaks_position
 # import Algorithm_Digital_Audio_processing as ADAP
 # import Algorithms_General_SP as AGSP
 
@@ -91,12 +91,10 @@ class EncoderSAOBFormat:
 
     def segmentation(self):
 
-        # Create object and run DYPSA with the B-format omni component
-        PeakPicking = Algorithm_PeakDetection(RIR=self.RIRs[:, 0], fs=self.fs,
-                                              groupdelay_threshold=self.groupdelay_threshold,
-                                              use_LPC=self.use_LPC, cutoff_samples=0.5*self.fs)
-        # It evaluates the W channel
-        p_pos = PeakPicking.peaks_position()
+        # Run DYPSA with the B-format omni component
+        p_pos = peaks_position(RIR=self.RIRs[:, 0], fs=self.fs,
+                                     groupdelay_threshold=self.groupdelay_threshold,
+                                     use_LPC=self.use_LPC, cutoff_samples=0.5*self.fs)
 
         # Choosing which peaks to prioritize
 
