@@ -24,12 +24,9 @@ RIRs = np.transpose(np.array(RIRs))
 EarlyReflections = EncoderSAOBFormat(RIRs=RIRs, discrete_mode='strongest', RoomDims=[15, 25, 10])
 
 # Calculating the early reflection parameters
-p_pos = EarlyReflections.segmentation()
+EarlyReflections.direct_and_early_parameterization()
 
 elapsed_time = time.time() - start_time
 
-plt.plot(p_pos)
-plt.show()
+print(elapsed_time)
 
-print(RIRs.shape)
-print(p_pos.shape)
