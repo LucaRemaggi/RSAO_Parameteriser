@@ -64,9 +64,69 @@ def peaks_position(RIR, fs, groupdelay_threshold, use_LPC=1, cutoff_samples=5000
         RIR = RIR_new
 
     # Running the DYPSA algorithm
-    y = xewgrdel(RIR, fs)
+    tew, sew, y, toff = xewgrdel(RIR, fs)
+    ntew = np.int_(np.round_(tew))
 
-    return RIR
+    # This avoids possible problems with sources too close to the microphones
+    if ntew[0] < 0:
+        ntew[0] = 0
+
+    # Create an array which has zeros except for where tew defines peak positions
+    k = 0
+    peaks_init = np.zeros(l_rir)
+    for idx_samp in range(0, len(y)):
+        if k == len(ntew):
+            break
+
+        if idx_samp == ntew[k]:
+            peaks_init[idx_samp] = 1
+            k += 1
+
+    # Peaks taken from the group-delay function where the slope is less than the threshold in input are deleted
+    for idx_sew in range(0, len(sew)):
+        if sew[idx_sew] > groupdelay_threshold:
+            peaks_init[ntew[idx_sew]] = 0
+    p_pos = peaks_init
+
+    # Normalizing the RIR
+    RIR = abs(RIR)
+    norm_val = np.max(RIR)
+    RIR = RIR / norm_val
+
+    # Take the neighbourhood of the calculated position in the signal (which corresponds in total to 1ms) taking the rms
+    # of the energy
+    half_win = int(round(fs/2000))
+    for idx_samp in range(0, len(ntew)):
+        center = int(ntew[idx_samp])
+        if (center - half_win) > 0:
+            segment = RIR[center-half_win:center+half_win]
+        else:
+            segment = RIR[0:center+half_win]
+
+        p_pos[center] = np.sqrt(np.mean(segment**2))
+
+    ################################################################
+    # From here there are additional improvements to the performance
+    ################################################################
+    # First, the array containing the peaks is normalized, and the position of the strongest peak found
+    p_pos = p_pos / np.max(p_pos)
+    ds_pos = int(np.argmax(p_pos))
+
+    # Everything before the direct sound is equal to zero
+    p_pos[:ds_pos-1] = 0
+
+    # Deletes small errors by aligning the estimated direct sound position to the one in input
+    ds_pos_gt = int(np.argmax(RIR))
+    estimation_err = ds_pos_gt - ds_pos
+    if estimation_err > 0:
+        p_pos = list(p_pos)
+        p_pos = [[0]*estimation_err + p_pos[estimation_err:]]
+    elif estimation_err < 0:
+        p_pos = list(p_pos)
+        p_pos = [p_pos[abs(estimation_err):] + [0]*abs(estimation_err)]
+    p_pos = np.transpose(np.array(p_pos))
+
+    return p_pos
 
 
 def xewgrdel(RIR, fs):
@@ -118,8 +178,10 @@ def zerocross(x, m='b'):
     else:
         f = k != 0
 
-    s = x[f + 1] - x[f]
+    f = np.transpose(np.int_(f))
 
+    s = np.subtract(x[f + 1], x[f])
+    t = f - np.divide(x[f], s)
 
     return t, s
 

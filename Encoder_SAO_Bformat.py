@@ -50,8 +50,7 @@
 import numpy as np
 import sys
 from Algorithm_PeakDetection import peaks_position
-# import Algorithm_Digital_Audio_processing as ADAP
-# import Algorithms_General_SP as AGSP
+from scipy import signal
 
 
 class EncoderSAOBFormat:
@@ -97,6 +96,27 @@ class EncoderSAOBFormat:
                                      use_LPC=self.use_LPC, cutoff_samples=0.5*self.fs)
 
         # Choosing which peaks to prioritize
+        if self.discrete_mode is 'first':
+            # Find peaks in the DYPSA output
+            locs_all = np.transpose(np.array(np.where(p_pos[:, 0] != 0)))
+            locs = locs_all[:(self.nPeaks + 5)]
+            peaks = np.squeeze(p_pos[locs])
+            firstearlypeaks = []
+            firstearlylocs = []
+        elif self.discrete_mode is 'strongest':
+            # Find the first two in time
+            locs_all = np.transpose(np.array(np.where(p_pos[:, 0] != 0)))
+            firstearlylocs = locs_all[:2]
+            firstearlypeaks = np.squeeze(p_pos[firstearlylocs])
+
+            # Then finds the first peaks in energy-descending order
+            peaks = np.squeeze(p_pos[locs_all])
+            peaks = list(peaks)
+            peaks = np.array(sorted(peaks, reverse=True))
+            locs_mixed, idx_locs = np.where(p_pos == peaks)
+            locs = locs_mixed[idx_locs]
+
+
 
         return p_pos
 

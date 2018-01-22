@@ -21,7 +21,7 @@ RIRs = [rirW, rirX, rirY, rirZ]
 RIRs = np.transpose(np.array(RIRs))
 
 # Defining the early reflection object
-EarlyReflections = EncoderSAOBFormat(RIRs=RIRs, RoomDims=[15, 25, 10])
+EarlyReflections = EncoderSAOBFormat(RIRs=RIRs, discrete_mode='strongest', RoomDims=[15, 25, 10])
 
 # Calculating the early reflection parameters
 p_pos = EarlyReflections.segmentation()
