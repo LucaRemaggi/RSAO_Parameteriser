@@ -13,6 +13,7 @@ class Segmentation:
         self.discrete_mode = discrete_mode
         self.nPeaks = nPeaks
         self.segments = None
+        self.TOAs_sample_single_mic = None
 
     def segmentation(self):
         # Run DYPSA with the B-format omni component
@@ -46,12 +47,13 @@ class Segmentation:
         # Select the reflections TOAs
         first_and_strong = list(locs) + list(firstearlylocs)
         uniquelocs = np.unique(first_and_strong)
-        TOAs_sample_single_mic = uniquelocs[0:self.nPeaks]
+        self.TOAs_sample_single_mic = uniquelocs[0:self.nPeaks]
 
         # Create a dictionary and store inside the reflection segments
-        self.segments = {'Direct_sound': self.RIR[TOAs_sample_single_mic[0] - 128:TOAs_sample_single_mic[0] + 128]}
+        self.segments = {'Direct_sound': self.RIR[self.TOAs_sample_single_mic[0]-128:
+                                                  self.TOAs_sample_single_mic[0] + 128]}
         for idx_refl in range(1, self.nPeaks):
-            self.segments['Reflection' + str(idx_refl)] = self.RIR[TOAs_sample_single_mic[idx_refl] -
-                                                              64:TOAs_sample_single_mic[idx_refl] + 64]
+            self.segments['Reflection' + str(idx_refl)] = self.RIR[self.TOAs_sample_single_mic[idx_refl] -
+                                                                   64:self.TOAs_sample_single_mic[idx_refl] + 64]
 
         return self

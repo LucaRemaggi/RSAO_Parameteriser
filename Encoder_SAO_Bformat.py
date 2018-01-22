@@ -87,6 +87,9 @@ class EncoderSAOBFormat:
         if late_mode is 'model' and RoomDims is None:
             sys.exit("Please, provide the room dimensions in input")
 
+        # Defining the outputs
+        self.TOAs = None
+
     def direct_and_early_parameterization(self):
 
         # Since it is a soundfield mic, we run the segmentation for the W channel only
@@ -96,6 +99,7 @@ class EncoderSAOBFormat:
                                               nPeaks=self.nPeaks)
         RIR_segments.segmentation()
         segments = RIR_segments.segments
+        self.TOAs = RIR_segments.TOAs_sample_single_mic
         
         return self
     
