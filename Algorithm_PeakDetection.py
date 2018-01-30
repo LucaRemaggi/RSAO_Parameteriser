@@ -144,8 +144,3 @@ class Peakpicking:
 def clustering_dypsa():
 
     return
-
-
-def findpeaks():
-
-    return

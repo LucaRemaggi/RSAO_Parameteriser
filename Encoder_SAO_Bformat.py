@@ -50,7 +50,6 @@
 import numpy as np
 import sys
 from RIR_Segmentation import Segmentation
-from scipy import signal
 
 
 class EncoderSAOBFormat:
@@ -98,8 +97,12 @@ class EncoderSAOBFormat:
                                               use_LPC=self.use_LPC, discrete_mode=self.discrete_mode,
                                               nPeaks=self.nPeaks)
         RIR_segments.segmentation()
+
         segments = RIR_segments.segments
         self.TOAs = RIR_segments.TOAs_sample_single_mic
+
+        # Defining LPC order to estimate colouration
+        LPC_orders = [[16], list([])]
         
         return self
     
