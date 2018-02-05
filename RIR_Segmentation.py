@@ -5,8 +5,8 @@ from Algorithm_PeakDetection import Peakpicking
 
 class Segmentation:
 
-    def __init__(self, RIR, fs, groupdelay_threshold, use_LPC, discrete_mode, nPeaks):
-        self.RIR = RIR
+    def __init__(self, RIRs, fs, groupdelay_threshold, use_LPC, discrete_mode, nPeaks, hamm_lengths):
+        self.RIRs = RIRs
         self.fs = fs
         self.groupdelay_threshold = groupdelay_threshold
         self.use_LPC = use_LPC
@@ -14,10 +14,11 @@ class Segmentation:
         self.nPeaks = nPeaks
         self.segments = None
         self.TOAs_sample_single_mic = None
+        self.hamm_lengths = hamm_lengths
 
     def segmentation(self):
-        # Run DYPSA with the B-format omni component
-        peakpicking = Peakpicking(RIR=self.RIR, fs=self.fs,
+        # Run DYPSA with the B-format omni component only (W channel)
+        peakpicking = Peakpicking(RIR=self.RIRs[:, 0], fs=self.fs,
                                   groupdelay_threshold=self.groupdelay_threshold,
                                   use_LPC=self.use_LPC)
         peakpicking.DYPSA()
@@ -50,10 +51,11 @@ class Segmentation:
         self.TOAs_sample_single_mic = uniquelocs[0:self.nPeaks]
 
         # Create a dictionary and store inside the reflection segments
-        self.segments = {'Direct_sound': self.RIR[self.TOAs_sample_single_mic[0]-128:
-                                                  self.TOAs_sample_single_mic[0] + 128]}
+        self.segments = {'Direct_sound': self.RIRs[self.TOAs_sample_single_mic[0]-self.hamm_lengths[0]:
+                                                   self.TOAs_sample_single_mic[0] + self.hamm_lengths[0], :]}
         for idx_refl in range(1, self.nPeaks):
-            self.segments['Reflection' + str(idx_refl)] = self.RIR[self.TOAs_sample_single_mic[idx_refl] -
-                                                                   64:self.TOAs_sample_single_mic[idx_refl] + 64]
+            self.segments['Reflection' + str(idx_refl)] = self.RIRs[self.TOAs_sample_single_mic[idx_refl] -
+                                                                    self.hamm_lengths[idx_refl]:self.TOAs_sample_single_mic[idx_refl] +
+                                                                                               self.hamm_lengths[idx_refl], :]
 
         return self

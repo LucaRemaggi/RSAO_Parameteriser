@@ -49,7 +49,10 @@
 
 import numpy as np
 import sys
+from scipy import signal
+from audiolazy import lazy_lpc as lpc
 from RIR_Segmentation import Segmentation
+from Beamformers import Beamformers
 
 
 class EncoderSAOBFormat:
@@ -91,19 +94,55 @@ class EncoderSAOBFormat:
 
     def direct_and_early_parameterization(self):
 
-        # Since it is a soundfield mic, we run the segmentation for the W channel only
-        RIR_segments = Segmentation(RIR=self.RIRs[:, 0], fs=self.fs,
+        # Window length for segmenting direct sound and early reflections
+        hamm_lengths = [32]*(self.n_discrete+1)
+        hamm_lengths[0] = 0.002 * self.fs
+        hamm_lengths = np.int_(hamm_lengths)
+
+        # Segment every channel of the soundfield mic
+        RIR_segments = Segmentation(RIRs=self.RIRs, fs=self.fs,
                                               groupdelay_threshold=self.groupdelay_threshold,
                                               use_LPC=self.use_LPC, discrete_mode=self.discrete_mode,
-                                              nPeaks=self.nPeaks)
+                                              nPeaks=self.nPeaks, hamm_lengths=hamm_lengths)
         RIR_segments.segmentation()
 
         segments = RIR_segments.segments
         self.TOAs = RIR_segments.TOAs_sample_single_mic
 
-        # Defining LPC order to estimate colouration
-        LPC_orders = [[16], list([])]
-        
+        # Beamforming from B-format cardioid steering
+        count = 0
+        for idx_refl in segments:
+            reflectionDOA = Beamformers(signal=segments[idx_refl])
+            reflectionDOA.steerBFormat()
+
+            # Amplitude (for valid peaks)
+            ampl_curr = np.sqrt(np.sum(reflectionDOA.hBeam**2))
+
+            # Defining LPC order to estimate colouration
+            LPC_orders = [8]*(self.n_discrete+1)
+            LPC_orders[0] = 16
+
+            # LPC spectrum estimation based on the highest amplitude microphone
+            hLPCRef = segments[idx_refl][:, 0]
+            nOD = LPC_orders[count]
+            ar = lpc.lpc(hLPCRef, nOD)
+
+            # # Plotting to try
+            # a = np.array(ar.numerator)
+            # b = np.array(ar.denominator)
+            #
+            # # Convert the filter into a time-reversed impulse response
+            # impulse = np.zeros(len(hLPCRef))
+            # impulse[0] = 1
+            # matched = signal.lfilter(b, a, impulse)
+
+            if idx_refl == 1:
+                s = None
+            else:
+                n = None
+
+            count += 1
+
         return self
     
     def late_parameterization(self):
