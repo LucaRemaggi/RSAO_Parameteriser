@@ -40,7 +40,7 @@ class Peakpicking:
             l_rir_lpc = len(rir_up)
 
             # Calculate the matching AR filter based on the RIR
-            ar = lpc.lpc(rir_up, self.nLPC)
+            ar = lpc.lpc.kautocor(rir_up, self.nLPC)
             a = np.array(ar.numerator)
             b = np.array(ar.denominator)
 

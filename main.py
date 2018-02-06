@@ -21,10 +21,14 @@ RIRs = [rirW, rirX, rirY, rirZ]
 RIRs = np.transpose(np.array(RIRs))
 
 # Defining the early reflection object
-EarlyReflections = EncoderSAOBFormat(RIRs=RIRs, discrete_mode='strongest', RoomDims=[15, 25, 10])
-
+EarlyReflections = EncoderSAOBFormat(RIRs=RIRs, discrete_mode='strongest')
 # Calculating the early reflection parameters
 EarlyReflections.direct_and_early_parameterization()
+
+# Defining the late reverberation object
+LateReverb = EncoderSAOBFormat(RIRs=RIRs, RoomDims=[15, 25, 10], EarlyProperties=EarlyReflections.param)
+# Calculating the late reverberation parameters
+LateReverb.late_parameterization()
 
 elapsed_time = time.time() - start_time
 

@@ -49,16 +49,18 @@
 
 import numpy as np
 import sys
+import math
 from scipy import signal
 from audiolazy import lazy_lpc as lpc
 from RIR_Segmentation import Segmentation
 from Beamformers import Beamformers
+from MixingTime_Estimation import EstimatePerceptualMixingTime
 
 
 class EncoderSAOBFormat:
 
     def __init__(self, RIRs, fs=48000, groupdelay_threshold=-0.05, use_LPC=1,
-                 n_discrete=20, discrete_mode='first', late_mode='model', RoomDims=None):
+                 n_discrete=20, discrete_mode='first', RoomDims=None, EarlyProperties=None):
         # Including input variables in self
         self.RIRs = RIRs
         self.fs = fs
@@ -66,8 +68,8 @@ class EncoderSAOBFormat:
         self.use_LPC = use_LPC
         self.n_discrete = n_discrete
         self.discrete_mode = discrete_mode
-        self.late_mode = late_mode
         self.RoomDims = RoomDims
+        self.EarlyProperties = EarlyProperties
 
         print("Assuming RIRs presented in B-Format (WXYZ)")
         
@@ -86,11 +88,8 @@ class EncoderSAOBFormat:
 
         self.PeakVals = np.zeros([self.nPeaks, self.nMics])
 
-        if late_mode is 'model' and RoomDims is None:
-            sys.exit("Please, provide the room dimensions in input")
-
         # Defining the outputs
-        self.TOAs = None
+        self.param = {}
 
     def direct_and_early_parameterization(self):
 
@@ -107,7 +106,7 @@ class EncoderSAOBFormat:
         RIR_segments.segmentation()
 
         segments = RIR_segments.segments
-        self.TOAs = RIR_segments.TOAs_sample_single_mic
+        TOAs = RIR_segments.TOAs_sample_single_mic
 
         # Beamforming from B-format cardioid steering
         count = 0
@@ -123,28 +122,41 @@ class EncoderSAOBFormat:
             LPC_orders[0] = 16
 
             # LPC spectrum estimation based on the highest amplitude microphone
-            hLPCRef = segments[idx_refl][:, 0]
+            hLPCRef = reflectionDOA.hBeam  # segments[idx_refl][:, 0]
             nOD = LPC_orders[count]
-            ar = lpc.lpc(hLPCRef, nOD)
+            ar = lpc.lpc.kautocor(hLPCRef, nOD)
 
-            # # Plotting to try
-            # a = np.array(ar.numerator)
-            # b = np.array(ar.denominator)
-            #
-            # # Convert the filter into a time-reversed impulse response
-            # impulse = np.zeros(len(hLPCRef))
-            # impulse[0] = 1
-            # matched = signal.lfilter(b, a, impulse)
-
-            if idx_refl == 1:
-                s = None
-            else:
-                n = None
+            # Saving parameters in a dictionary
+            self.param.update({idx_refl: {'toa': TOAs[count]}})
+            self.param[idx_refl].update({'window_samples': hamm_lengths[count]*2})
+            self.param[idx_refl].update({'doa': [round(math.degrees(reflectionDOA.az_rad_curr)),
+                                                 round(math.degrees(reflectionDOA.el_rad_curr))]})
+            self.param[idx_refl].update({'level': ampl_curr})
+            self.param[idx_refl].update({'filter': ar.numerator})
 
             count += 1
 
         return self
     
     def late_parameterization(self):
-        
-        return 0
+        if self.RoomDims is None:
+            sys.exit("Please, provide the room dimensions in input")
+
+        # Create object to calculate the mixing time
+        mte = EstimatePerceptualMixingTime(RoomDims=self.RoomDims)
+        mte.model_based()
+
+        self.param.update({'Late': {'toa': mte.mixing_time_estimate['model']['tmp50'] * self.fs /
+                                           1000 + self.EarlyProperties['Direct_sound']['toa'] + 100}})
+        self.param['Late'].update({'refattackramplength': math.floor(self.param['Late']['toa'] -
+                                                          self.EarlyProperties['Reflection1']['toa'])})
+
+        # Take the last part after the estimated mixing time
+        lateFirstSample = np.int_(round(self.param['Late']['toa']))
+        hLate = self.RIRs[lateFirstSample:, :]
+        self.param['Late'].update({'window_samples': hLate.shape[0]})
+        estimateDrop = -20  # Drop in late energy over which to estimate level and decay
+
+        # Filter bank
+
+        return self
