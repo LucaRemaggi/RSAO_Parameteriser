@@ -55,6 +55,8 @@ from audiolazy import lazy_lpc as lpc
 from RIR_Segmentation import Segmentation
 from Beamformers import Beamformers
 from MixingTime_Estimation import EstimatePerceptualMixingTime
+from FilterGeneration import FilterGeneration
+from Utility import DecayCalculation
 
 
 class EncoderSAOBFormat:
@@ -157,6 +159,41 @@ class EncoderSAOBFormat:
         self.param['Late'].update({'window_samples': hLate.shape[0]})
         estimateDrop = -20  # Drop in late energy over which to estimate level and decay
 
-        # Filter bank
+        # Defining the filter bank properties
+        fcentre = [1000*2**idx for idx in range(-4, 5)]
+        bandwidth = [1]*10
+        bandwidth[0] = 0.3
+        maxwindowlength = self.fs/100
+        windowlength = [2*self.fs/idx for idx in fcentre]
+        for iW in range(0, len(windowlength)):
+            if windowlength[iW] > maxwindowlength:
+                windowlength[iW] = maxwindowlength
+        self.param['Late'].update({'bandcut': fcentre})
+
+        # Generating the filter bank and calculating the RIR decays
+        for iBand in range(0, len(fcentre)):
+            if iBand == 0:
+                LowPass = FilterGeneration(f0=fcentre[iBand], BW=1, fs=self.fs)
+                LowPass.lowpassCoefficientsBW()
+                b = LowPass.b
+                a = LowPass.a
+
+            elif iBand == len(fcentre)-1:
+                HighPass = FilterGeneration(f0=fcentre[iBand], BW=1, fs=self.fs)
+                HighPass.highpassCoefficientsBW()
+                b = HighPass.b
+                a = HighPass.a
+
+            else:
+                BandPass = FilterGeneration(f0=fcentre[iBand], BW=1, fs=self.fs)
+                BandPass.bandpassCoefficientsBW()
+                b = BandPass.b
+                a = BandPass.a
+
+            # Backwards integration and decay estimate
+            FilteredLate = signal.filtfilt(b, a, hLate[:, 0])
+            FilteredFull = signal.filtfilt(b, a, self.RIRs[:, 0])
+            decay = DecayCalculation(np.abs(FilteredLate), self.fs)
+            decay.RT_Shroeder()
 
         return self

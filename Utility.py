@@ -52,3 +52,14 @@ class Utility:
 
         return self
 
+
+class DecayCalculation:
+
+    def __init__(self):
+
+
+    def RT_Shroeder(self):
+
+
+        return self
+
