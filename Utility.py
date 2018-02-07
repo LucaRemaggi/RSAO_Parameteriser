@@ -55,11 +55,25 @@ class Utility:
 
 class DecayCalculation:
 
-    def __init__(self):
-
+    def __init__(self, h, fs=48000, region=[-5, -35], method=1, delay_comp=0):
+        self.h = h
+        self.fs = fs
+        self.region = region
+        self.method = method
+        self.delay_comp = delay_comp
 
     def RT_Shroeder(self):
+        h_length = len(self.h)
+        # Compensate sound propagation (exclude parts of the RIR before the direct path)
+        if self.delay_comp == 1:
+            prop_delay = np.argmax(self.h)
+            self.h[0:h_length-prop_delay] = self.h[prop_delay:h_length]
+            h_length = len(self.h)
 
+        # Energy decay curve
+        h_sq = self.h ** 2
+        h_sq = np.fliplr(h_sq)
+        EDC = np.cumsum(h_sq)
 
         return self
 

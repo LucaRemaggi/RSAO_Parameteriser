@@ -30,13 +30,14 @@ class Peakpicking:
         cutoff_samples = np.int_(self.cutoff_samples)
 
         # General variables internal to this method
-        prev_rir = self.RIR  # This is defined to allow future changes at the peak positions
+        prev_rir = self.RIR * 1  # This is defined to allow future changes at the peak positions
         l_rir = len(self.RIR)
-        self.RIR[cutoff_samples:l_rir] = 0
+        internal_RIR = self.RIR * 1
+        internal_RIR[cutoff_samples:l_rir] = 0
 
         if self.use_LPC == 1:
             # LPC for reduction of amount of data in RIR
-            rir_up = signal.decimate(self.RIR, 2)
+            rir_up = signal.decimate(internal_RIR, 2)
             l_rir_lpc = len(rir_up)
 
             # Calculate the matching AR filter based on the RIR
@@ -62,17 +63,17 @@ class Peakpicking:
         val_max_old = np.argmax(abs(prev_rir))
         diff_max = val_max_new - val_max_old
         if diff_max > 0:
-            del self.RIR
-            self.RIR = np.concatenate([RIR_new[diff_max:], np.zeros(diff_max)])
+            del internal_RIR
+            internal_RIR = np.concatenate([RIR_new[diff_max:], np.zeros(diff_max)])
         elif diff_max < 0:
-            del self.RIR
-            self.RIR = np.concatenate([np.zeros(abs(diff_max)), RIR_new[:l_rir-abs(diff_max)]])
+            del internal_RIR
+            internal_RIR = np.concatenate([np.zeros(abs(diff_max)), RIR_new[:l_rir-abs(diff_max)]])
         else:
-            del self.RIR
-            self.RIR = RIR_new
+            del internal_RIR
+            internal_RIR = RIR_new
 
         # Running the DYPSA algorithm
-        OriginalDYPSA = Utility(self.RIR, self.fs)
+        OriginalDYPSA = Utility(internal_RIR, self.fs)
         peaks_properties = OriginalDYPSA.xewgrdel()
         tew = peaks_properties.tew
         sew = peaks_properties.sew
@@ -101,9 +102,9 @@ class Peakpicking:
         self.p_pos = peaks_init
 
         # Normalizing the RIR
-        self.RIR = abs(self.RIR)
-        norm_val = np.max(self.RIR)
-        self.RIR = self.RIR / norm_val
+        internal_RIR = abs(internal_RIR)
+        norm_val = np.max(internal_RIR)
+        internal_RIR = internal_RIR / norm_val
 
         # Take the neighbourhood of the calculated position in the signal (which corresponds in total to 1ms) taking the rms
         # of the energy
@@ -111,9 +112,9 @@ class Peakpicking:
         for idx_samp in range(0, len(ntew)):
             center = int(ntew[idx_samp])
             if (center - half_win) > 0:
-                segment = self.RIR[center-half_win:center+half_win]
+                segment = internal_RIR[center-half_win:center+half_win]
             else:
-                segment = self.RIR[0:center+half_win]
+                segment = internal_RIR[0:center+half_win]
 
             self.p_pos[center] = np.sqrt(np.mean(segment**2))
 
@@ -128,7 +129,7 @@ class Peakpicking:
         self.p_pos[:ds_pos-1] = 0
 
         # Deletes small errors by aligning the estimated direct sound position to the one in input
-        ds_pos_gt = int(np.argmax(self.RIR))
+        ds_pos_gt = int(np.argmax(internal_RIR))
         estimation_err = ds_pos_gt - ds_pos
         if estimation_err > 0:
             self.p_pos = list(self.p_pos)

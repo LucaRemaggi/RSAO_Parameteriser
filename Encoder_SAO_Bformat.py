@@ -193,7 +193,7 @@ class EncoderSAOBFormat:
             # Backwards integration and decay estimate
             FilteredLate = signal.filtfilt(b, a, hLate[:, 0])
             FilteredFull = signal.filtfilt(b, a, self.RIRs[:, 0])
-            decay = DecayCalculation(np.abs(FilteredLate), self.fs)
+            decay = DecayCalculation(h=np.abs(FilteredLate), fs=self.fs)
             decay.RT_Shroeder()
 
         return self
