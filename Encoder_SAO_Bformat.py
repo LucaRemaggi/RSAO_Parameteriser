@@ -57,6 +57,8 @@ from Beamformers import Beamformers
 from MixingTime_Estimation import EstimatePerceptualMixingTime
 from FilterGeneration import FilterGeneration
 from Utility import DecayCalculation
+from scipy import optimize
+from Utility import Biquad_Convertion
 
 
 class EncoderSAOBFormat:
@@ -138,6 +140,15 @@ class EncoderSAOBFormat:
 
             count += 1
 
+        # Convert LPC to biquads including normalization
+        earlybiquad = Biquad_Convertion(RSAO_params=self.param)
+        earlybiquad.lpc2biquad()
+
+        for idx_refl in list(self.param.keys()):
+            self.param[idx_refl].update({'filtersos': earlybiquad.RSAO_params[idx_refl]['filtersos']})
+
+        self.param
+
         return self
     
     def late_parameterization(self):
@@ -164,7 +175,7 @@ class EncoderSAOBFormat:
         bandwidth = [1]*10
         bandwidth[0] = 0.3
         maxwindowlength = self.fs/100
-        windowlength = [2*self.fs/idx for idx in fcentre]
+        windowlength = np.int_([2*self.fs/idx for idx in fcentre])
         for iW in range(0, len(windowlength)):
             if windowlength[iW] > maxwindowlength:
                 windowlength[iW] = maxwindowlength
@@ -190,10 +201,44 @@ class EncoderSAOBFormat:
                 b = BandPass.b
                 a = BandPass.a
 
-            # Backwards integration and decay estimate
+            # Backwards integration
             FilteredLate = signal.filtfilt(b, a, hLate[:, 0])
             FilteredFull = signal.filtfilt(b, a, self.RIRs[:, 0])
+
+            # Decay estimate
             decay = DecayCalculation(h=np.abs(FilteredLate), fs=self.fs)
             decay.RT_Shroeder()
+            estimateStop = np.argmin(np.abs(decay.EDC_log - (-20)))
+
+            # Fitting the decays with an exponential
+            time = np.linspace(0, estimateStop, estimateStop)
+            fitfunc = lambda p, x: p[0]*np.exp(p[1]*x)  # Target function
+            errfunc = lambda p, x, y: fitfunc(p, x) - y  # Distance to the target function
+            fit_init = [np.max(decay.EDC), -0.5]  # Initial guess for the parameters
+            fit_tmp, success = optimize.leastsq(errfunc, fit_init[:], args=(time, decay.EDC[0:estimateStop]))
+            try:
+                success == 1
+            except OverflowError:
+                print('Overflow encountered, possibly in the np.exp function')
+
+            fitresult = fit_tmp[1] / 2
+
+            # Estimating reverberation energy
+            lateEnergy = np.sum(FilteredFull[lateFirstSample:lateFirstSample+estimateStop] ** 2)
+            est_energy = np.sqrt(np.sum(FilteredFull[lateFirstSample-windowlength[iBand]:
+                                        lateFirstSample+windowlength[iBand]] ** 2))
+
+            if iBand == 0:
+                self.param['Late'].update({'expdecays': {str(iBand+1): fitresult}})
+                self.param['Late'].update({'level': {str(iBand + 1): est_energy*bandwidth[iBand]}})
+            else:
+                self.param['Late']['expdecays'].update({str(iBand + 1): fitresult})
+                self.param['Late']['level'].update({str(iBand + 1): est_energy*bandwidth[iBand]})
+
+        # Convert late level to be as a proportion of the direct level
+
+        # Convert the reverb TOA assuming that the direct sound arrives at time 0
+
+        # Conver the times from samples to seconds, and populate the attack time based on the late refattackramplength
 
         return self
