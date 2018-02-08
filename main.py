@@ -30,6 +30,32 @@ LateReverb = EncoderSAOBFormat(RIRs=RIRs, RoomDims=[15, 25, 10], EarlyProperties
 # Calculating the late reverberation parameters
 LateReverb.late_parameterization()
 
+# Delete variables that are not needed in the objects
+del EarlyReflections.EarlyProperties
+del EarlyReflections.PeakVals
+del EarlyReflections.RIRs
+del EarlyReflections.RoomDims
+del EarlyReflections.discrete_mode
+del EarlyReflections.fs
+del EarlyReflections.groupdelay_threshold
+del EarlyReflections.nMics
+del EarlyReflections.nPeaks
+del EarlyReflections.n_discrete
+del EarlyReflections.speed
+del EarlyReflections.use_LPC
+del LateReverb.EarlyProperties
+del LateReverb.PeakVals
+del LateReverb.RIRs
+del LateReverb.RoomDims
+del LateReverb.discrete_mode
+del LateReverb.fs
+del LateReverb.groupdelay_threshold
+del LateReverb.nMics
+del LateReverb.nPeaks
+del LateReverb.n_discrete
+del LateReverb.speed
+del LateReverb.use_LPC
+
 elapsed_time = time.time() - start_time
 
 print(elapsed_time)
