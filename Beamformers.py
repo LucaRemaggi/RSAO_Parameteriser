@@ -7,8 +7,8 @@
 
 import numpy as np
 
-class Beamformers:
 
+class Beamformers:
 
     def __init__(self, signal, d=1, dimension='3D'):
         self.signal = signal

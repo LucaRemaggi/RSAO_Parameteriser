@@ -139,11 +139,29 @@ class EncoderSAOBFormat:
             self.param[idx_refl].update({'filter': ar.numerator})
 
             # Convert LPC to biquads including normalization
-            earlybiquad = Biquad_Convertion(RSAO_params=self.param[idx_refl])
+            earlybiquad = Biquad_Convertion(RSAO_params=self.param, idx_RIR_part_investigated=idx_refl)
             earlybiquad.lpc2biquad()
             self.param[idx_refl].update({'filtersos': earlybiquad.filtersos})
 
+            # Convert the levels to be relative to the direct sound's
+            if count > 0:
+                earlybiquad.convertlevels_early()
+                self.param[idx_refl]['level'] = earlybiquad.earlyLevel
+
+            # Convert delays to be relative to the direct sound's
+            if count > 0:
+                earlybiquad.convertdelays_early()
+                self.param[idx_refl]['toa'] = earlybiquad.earlyDelay
+
+            # Convert onset times in seconds
+            if count > 0:
+                self.param[idx_refl]['toa'] = self.param[idx_refl]['toa'] / self.fs
+
             count += 1
+
+        # Convert delay direct sound
+        self.param['Direct_sound'].update({'toa_notconverted': self.param['Direct_sound']['toa']})
+        self.param['Direct_sound']['toa'] = 0
 
         self.param
 
@@ -233,10 +251,28 @@ class EncoderSAOBFormat:
                 self.param['Late']['expdecays'].update({str(iBand + 1): fitresult})
                 self.param['Late']['level'].update({str(iBand + 1): est_energy*bandwidth[iBand]})
 
-        # Convert late level to be as a proportion of the direct level
+            # Convert late level to be as a proportion of the direct level
+            latebiquad = Biquad_Convertion(RSAO_params=self.param, idx_RIR_part_investigated='Late',
+                                           RSAO_params_directsound=self.EarlyProperties['Direct_sound'],
+                                           iBand_investigated=iBand)
+            latebiquad.convertlevels_late()
+            self.param['Late']['level'][str(iBand + 1)] = latebiquad.lateLevel
 
-        # Convert the reverb TOA assuming that the direct sound arrives at time 0
+        # Convert the reverb TOA assuming that the direct sound arrives at time 0, and populate the attack time based on
+        #  the late refattackramplength
+        latebiquad.convertdelays_late()
+        self.param['Late']['toa'] = latebiquad.lateDelay
+        self.param['Late']['toa'] = (self.param['Late']['toa']-self.param['Late']['refattackramplength']) / self.fs
 
-        # Conver the times from samples to seconds, and populate the attack time based on the late refattackramplength
+        # Convert the times from samples to seconds
+        for iBand in range(0, len(fcentre)):
+            if iBand == 0:
+                self.param['Late'].update({'attacktimes': {str(iBand + 1): self.param['Late']['refattackramplength'] /
+                                                           self.fs}})
+            else:
+                self.param['Late']['attacktimes'].update({str(iBand + 1): self.param['Late']['refattackramplength'] /
+                                                          self.fs})
+
+            self.param['Late']['expdecays'][str(iBand + 1)] = self.param['Late']['expdecays'][str(iBand + 1)] * self.fs
 
         return self

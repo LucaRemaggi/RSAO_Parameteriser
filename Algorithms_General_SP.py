@@ -37,23 +37,3 @@ class Algorithms_General_SP:
         self.t = f - np.divide(self.x[f], self.s)
 
         return self
-    
-    def _FindNearest():
-        
-        return
-    
-    def _LPC2Biquad():
-        
-        return
-    
-    def _ConvertLevels():
-        
-        return
-    
-    def _ConvertDelays():
-        
-        return
-    
-    def _ConvertTimes():
-        
-        return

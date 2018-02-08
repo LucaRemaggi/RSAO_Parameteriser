@@ -19,7 +19,6 @@ class Utility:
         self.EDC_log = None
         self.EDC = None
 
-
     def xewgrdel(self):
         # This is the DYPSA algorithm that has been translated from Matlab to Python. The DYPSA algorithm was first
         # presented in P. A. Naylor, A. Kounoudes, J. Gudnason and M. Brookes, ''Estimation of glottal closure instants in
@@ -110,13 +109,46 @@ class DecayCalculation:
 
 class Biquad_Convertion():
 
-    def __init__(self, RSAO_params):
+    def __init__(self, RSAO_params, RSAO_params_directsound=None, idx_RIR_part_investigated=None, iBand_investigated=None):
         self.RSAO_params = RSAO_params
+        self.RSAO_params_single = RSAO_params[idx_RIR_part_investigated]
+        self.idx_RIR_part_investigated = idx_RIR_part_investigated
+        self.iBand_investigated = iBand_investigated
+        self.RSAO_params_directsound = RSAO_params_directsound
+
         self.filtersos = None
+        self.earlyLevel = None
+        self.lateLevel = None
 
     def lpc2biquad(self):
         # Obtain biquad coefficients for filter estimation
-        self.filtersos = _normalized_sos(self.RSAO_params['filter'])
+        self.filtersos = _normalized_sos(self.RSAO_params_single['filter'])
+
+        return self
+
+    def convertlevels_early(self):
+        # Convert parameters so that the early levels are relative to the direct level
+        directLevel = self.RSAO_params['Direct_sound']['level']
+        self.earlyLevel = self.RSAO_params_single['level'] / directLevel
+
+        return self
+
+    def convertlevels_late(self):
+        # Convert parameters so that the early levels are relative to the direct level
+        directLevel = self.RSAO_params_directsound['level']
+        self.lateLevel = self.RSAO_params_single['level'][str(self.iBand_investigated + 1)] / directLevel
+
+        return self
+
+    def convertdelays_early(self):
+        self.earlyDelay = self.RSAO_params_single['toa'] - self.RSAO_params['Direct_sound']['toa']
+
+        return self
+
+    def convertdelays_late(self):
+        self.lateDelay = self.RSAO_params_single['toa'] - self.RSAO_params_directsound['toa_notconverted']
+
+        return self
 
 
 def _normalized_sos(coeff):
