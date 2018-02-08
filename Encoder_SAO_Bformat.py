@@ -138,14 +138,12 @@ class EncoderSAOBFormat:
             self.param[idx_refl].update({'level': ampl_curr})
             self.param[idx_refl].update({'filter': ar.numerator})
 
+            # Convert LPC to biquads including normalization
+            earlybiquad = Biquad_Convertion(RSAO_params=self.param[idx_refl])
+            earlybiquad.lpc2biquad()
+            self.param[idx_refl].update({'filtersos': earlybiquad.filtersos})
+
             count += 1
-
-        # Convert LPC to biquads including normalization
-        earlybiquad = Biquad_Convertion(RSAO_params=self.param)
-        earlybiquad.lpc2biquad()
-
-        for idx_refl in list(self.param.keys()):
-            self.param[idx_refl].update({'filtersos': earlybiquad.RSAO_params[idx_refl]['filtersos']})
 
         self.param
 

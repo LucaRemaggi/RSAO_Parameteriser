@@ -112,14 +112,11 @@ class Biquad_Convertion():
 
     def __init__(self, RSAO_params):
         self.RSAO_params = RSAO_params
-
+        self.filtersos = None
 
     def lpc2biquad(self):
-        for idx_refl in list(self.RSAO_params.keys()):
-            # Obtain biquad coefficients for filter estimation
-            filtersos = _normalized_sos(self.RSAO_params[idx_refl]['filter'])
-
-            self.RSAO_params[idx_refl].update({'filtersos': filtersos})
+        # Obtain biquad coefficients for filter estimation
+        self.filtersos = _normalized_sos(self.RSAO_params['filter'])
 
 
 def _normalized_sos(coeff):
