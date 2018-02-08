@@ -73,7 +73,7 @@ class Peakpicking:
             internal_RIR = RIR_new
 
         # Running the DYPSA algorithm
-        OriginalDYPSA = Utility(internal_RIR, self.fs)
+        OriginalDYPSA = Utility(RIR=internal_RIR, fs=self.fs)
         peaks_properties = OriginalDYPSA.xewgrdel()
         tew = peaks_properties.tew
         sew = peaks_properties.sew

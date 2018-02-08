@@ -1,7 +1,6 @@
 
 from scipy import signal
 import numpy as np
-from Algorithms_General_SP import Algorithms_General_SP
 
 
 class Utility:
@@ -45,12 +44,37 @@ class Utility:
             self.y = signal.lfilter(daw, [1], self.y) / np.sum(daw)  # Low pass filtering
             self.toff = self.toff - (fw - 1)/2
 
-        zerocrossing = Algorithms_General_SP(x=self.y, m='n')
-        zerocrossing.zerocross()  # Finding zero crossing
-        self.tew = zerocrossing.t
-        self.sew = zerocrossing.s
+        # Finding zero crossing
+        self.x = self.y * 1
+        self.m = 'n'
+        self.zerocross()
+        self.tew = self.t
+        self.sew = self.s
 
         self.tew = self.tew + self.toff
+
+        return self
+
+    def zerocross(self):
+        # This code is translated from the original version that was in Matlab, within the VOICEBOX toolbox
+        # zerocross finds the zeros crossing in a signal
+
+        self.x[abs(self.x) < 10 ** -5] = 0
+
+        self.s = self.x >= 0
+        self.s = np.int_(np.array(self.s))  # Converting false to 0 and true to 1
+        k = self.s[1:] - self.s[:-1]
+        if self.m is 'p':
+            f = np.where(k > 0)
+        elif self.m is 'n':
+            f = np.where(k < 0)
+        else:
+            f = k != 0
+
+        f = np.transpose(np.int_(f))
+
+        self.s = np.subtract(self.x[f + 1], self.x[f])
+        self.t = f - np.divide(self.x[f], self.s)
 
         return self
 
@@ -109,7 +133,9 @@ class DecayCalculation:
 
 class Biquad_Convertion():
 
-    def __init__(self, RSAO_params, RSAO_params_directsound=None, idx_RIR_part_investigated=None, iBand_investigated=None):
+    def __init__(self, RSAO_params, RSAO_params_directsound=None, idx_RIR_part_investigated=None,
+                 iBand_investigated=None):
+
         self.RSAO_params = RSAO_params
         self.RSAO_params_single = RSAO_params[idx_RIR_part_investigated]
         self.idx_RIR_part_investigated = idx_RIR_part_investigated

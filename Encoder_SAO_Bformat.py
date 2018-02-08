@@ -150,6 +150,9 @@ class EncoderSAOBFormat:
 
             # Convert delays to be relative to the direct sound's
             if count > 0:
+                if count == 1:
+                    self.param[idx_refl].update({'toa_notconverted': self.param[idx_refl]['toa']})
+
                 earlybiquad.convertdelays_early()
                 self.param[idx_refl]['toa'] = earlybiquad.earlyDelay
 
@@ -176,9 +179,9 @@ class EncoderSAOBFormat:
         mte.model_based()
 
         self.param.update({'Late': {'toa': mte.mixing_time_estimate['model']['tmp50'] * self.fs /
-                                           1000 + self.EarlyProperties['Direct_sound']['toa'] + 100}})
+                                           1000 + self.EarlyProperties['Direct_sound']['toa_notconverted'] + 100}})
         self.param['Late'].update({'refattackramplength': math.floor(self.param['Late']['toa'] -
-                                                          self.EarlyProperties['Reflection1']['toa'])})
+                                                          self.EarlyProperties['Reflection1']['toa_notconverted'])})
 
         # Take the last part after the estimated mixing time
         lateFirstSample = np.int_(round(self.param['Late']['toa']))

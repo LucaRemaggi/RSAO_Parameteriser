@@ -2,12 +2,11 @@
 from Encoder_SAO_Bformat import EncoderSAOBFormat
 import scipy.io as sio
 import numpy as np
-import time
-import matplotlib.pyplot as plt
+import pickle
 
-start_time = time.time()
-
+##############################################################
 # Loading RIRs
+##############################################################
 matW = sio.loadmat('../AES_Milan/RIRs/SoundField_floor_W.mat')
 rirW = matW['SoundField_floor_W_RIRs'][:, 1]
 matX = sio.loadmat('../AES_Milan/RIRs/SoundField_floor_X.mat')
@@ -20,6 +19,9 @@ RIRs = np.empty([len(rirW), 4])
 RIRs = [rirW, rirX, rirY, rirZ]
 RIRs = np.transpose(np.array(RIRs))
 
+##############################################################
+# RSAO estimation
+##############################################################
 # Defining the early reflection object
 EarlyReflections = EncoderSAOBFormat(RIRs=RIRs, discrete_mode='strongest')
 # Calculating the early reflection parameters
@@ -30,6 +32,9 @@ LateReverb = EncoderSAOBFormat(RIRs=RIRs, RoomDims=[15, 25, 10], EarlyProperties
 # Calculating the late reverberation parameters
 LateReverb.late_parameterization()
 
+##############################################################
+# Delete variables that are not needed
+##############################################################
 # Delete variables that are not needed in the objects
 del EarlyReflections.EarlyProperties
 del EarlyReflections.PeakVals
@@ -56,7 +61,22 @@ del LateReverb.n_discrete
 del LateReverb.speed
 del LateReverb.use_LPC
 
-elapsed_time = time.time() - start_time
+##############################################################
+# Save objects
+##############################################################
+with open('RSAO_Early_params', 'wb') as output:
+    pickler = pickle.Pickler(output, -1)
+    pickler.dump(EarlyReflections)
 
-print(elapsed_time)
+with open('RSAO_Late_params', 'wb') as output:
+    pickler = pickle.Pickler(output, -1)
+    pickler.dump(LateReverb)
 
+##############################################################
+# Load objects
+##############################################################
+# with open('RSAO_Early_params', 'rb') as input:
+#     EarlyReflections = pickle.load(input)
+#
+# with open('RSAO_Late_params', 'rb') as input:
+#     LateReverb = pickle.load(input)
