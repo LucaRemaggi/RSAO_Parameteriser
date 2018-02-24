@@ -1,5 +1,6 @@
 
 from Encoder_SAO_Bformat import EncoderSAOBFormat
+from GenerateJSON import GenerateJSON_RSAO
 import scipy.io as sio
 import numpy as np
 import pickle
@@ -71,6 +72,15 @@ with open('RSAO_Early_params', 'wb') as output:
 with open('RSAO_Late_params', 'wb') as output:
     pickler = pickle.Pickler(output, -1)
     pickler.dump(LateReverb)
+
+##############################################################
+# Write json file containing BFormat-derived parameters
+##############################################################
+JsonFile = GenerateJSON_RSAO(paramEarly=EarlyReflections.param, paramLate=LateReverb.param, name='testroom',
+                             maxEarly=10, filename='BridgeWaterHall_ls2.json')
+JsonFile.getobjectvector_roomlibrary()
+JsonFile.savejson()
+
 
 ##############################################################
 # Load objects
