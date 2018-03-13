@@ -23,13 +23,15 @@ RIRs = np.transpose(np.array(RIRs))
 ##############################################################
 # RSAO estimation
 ##############################################################
+RoomDims = [23.97, 32.22, 21.89]
+
 # Defining the early reflection object
 EarlyReflections = EncoderSAOBFormat(RIRs=RIRs, discrete_mode='strongest')
 # Calculating the early reflection parameters
 EarlyReflections.direct_and_early_parameterization()
 
 # Defining the late reverberation object
-LateReverb = EncoderSAOBFormat(RIRs=RIRs, RoomDims=[15, 25, 10], EarlyProperties=EarlyReflections.param)
+LateReverb = EncoderSAOBFormat(RIRs=RIRs, RoomDims=RoomDims, EarlyProperties=EarlyReflections.param)
 # Calculating the late reverberation parameters
 LateReverb.late_parameterization()
 
@@ -77,7 +79,7 @@ with open('RSAO_Late_params', 'wb') as output:
 # Write json file containing BFormat-derived parameters
 ##############################################################
 JsonFile = GenerateJSON_RSAO(paramEarly=EarlyReflections.param, paramLate=LateReverb.param, name='testroom',
-                             maxEarly=10, filename='BridgeWaterHall_ls2.json')
+                             maxEarly=10, filename='BridgeWaterHall_ls2.json', objtype='pointreverb')
 JsonFile.getobjectvector_roomlibrary()
 JsonFile.savejson()
 

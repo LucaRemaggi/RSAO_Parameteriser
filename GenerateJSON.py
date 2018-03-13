@@ -11,22 +11,24 @@ import json
 
 class GenerateJSON_RSAO():
 
-    def __init__(self, paramEarly, paramLate, name, maxEarly, filename):
+    def __init__(self, paramEarly, paramLate, name, maxEarly, filename, objtype):
         self.paramEarly = paramEarly
         self.paramLate = paramLate
         self.name = name
         self.maxEarly = maxEarly
         self.filename = filename
+        self.objtype = objtype
         self.libentry = []
 
     def getobjectvector_roomlibrary(self):
         ##############
         # Direct sound
         ##############
-        self.libentry = [{'name': self.name, 'position': {'az': '{:0.2f}'.format(self.paramEarly['Direct_sound']['doa'][0]),
-                                                          'el': '{:0.2f}'.format(self.paramEarly['Direct_sound']['doa'][1]),
-                                                          'radius': '1.00'},
-                         'room': {'ereflect': []}}]
+        self.libentry = {'name': self.name, 'type': self.objtype, 'id': 0, 'channels': 0, 'priority': 0, 'level': 1.0,
+                         'position': {'az': '{:0.2f}'.format(self.paramEarly['Direct_sound']['doa'][0]),
+                                      'el': '{:0.2f}'.format(self.paramEarly['Direct_sound']['doa'][1]),
+                                      'radius': '1.00'},
+                         'room': {'ereflect': []}}
 
         ###################
         # Early reflections
@@ -53,20 +55,20 @@ class GenerateJSON_RSAO():
 
                 tmpDictionary['biquadsos'].append(tmp)
 
-            self.libentry[0]['room']['ereflect'].append(tmpDictionary)
+            self.libentry['room']['ereflect'].append(tmpDictionary)
 
         ####################
         # Late reverberation
         ####################
-        self.libentry[0]['room'].update({'lreverb': {'delay': '{:0.3e}'.format(self.paramLate['Late']['toa']),
-                                                     'level': formatList(self.paramLate['Late']['level']),
-                                                     'attacktime': formatList(self.paramLate['Late']['attacktimes']),
-                                                     'decayconst': formatList(self.paramLate['Late']['expdecays'])}})
+        self.libentry['room'].update({'lreverb': {'delay': '{:0.3e}'.format(self.paramLate['Late']['toa']),
+                                                  'level': formatList(self.paramLate['Late']['level']),
+                                                  'attacktime': formatList(self.paramLate['Late']['attacktimes']),
+                                                  'decayconst': formatList(self.paramLate['Late']['expdecays'])}})
 
         return self
 
     def savejson(self):
-        data = {'roomlibrary': self.libentry}
+        data = self.libentry
         with open(self.filename, 'w') as outfile:
             json.dump(data, outfile)
 
