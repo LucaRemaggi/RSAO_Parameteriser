@@ -1,29 +1,47 @@
+"""
+This Python package estimates the Reverberant Spatial Audio Object (RSAO) given a B-Format room impulse response (RIR).
+
+Input:
+.wav file containing the 4 channels of a B-Format RIR
+OutPut:
+It saves two files containing the RSAO parameters related to the early reflections (plus direct sound) and the late
+reverberation, respectively.
+Additionally it also saves a .json file, that contains the RSAO metadata that can be read by VISR, the object-based S3A
+renderer.
+
+Coded by:
+Luca Remaggi, CVSSP, University of Surrey, 2018
+
+If you use any code included in this package for research purposes, please refer to the following papers:
+- P. Coleman, A. Franck, P. J. B. Jackson, R. J. Hughes, L. Remaggi, F. Melchior, "Object-based reverberation for
+  spatial audio", Journal of the Audio Engineering Society, Vol. 65, No. 1/2, pp. 66-77, 2017.
+- L. Remaggi, P. J. B. Jackson, P. Coleman, "Estimation of room reflection parameters for a reverberant spatial audio
+  object", 138th AES Convention, Warsaw, Poland, 2015.
+- P. Coleman, A. Franck, D. Menzies, P. J. B. Jackson, "Object-Based Reverberation Encoding from First-Order Ambisonic
+  RIRs", 142nd AES Convention, Berlin, Germany, 2017.
+"""
 
 from Encoder_SAO_Bformat import EncoderSAOBFormat
 from GenerateJSON import GenerateJSON_RSAO
-import scipy.io as sio
+from scipy.io import wavfile
 import numpy as np
 import pickle
+import sys
 
 ##############################################################
 # Loading RIRs
 ##############################################################
-matW = sio.loadmat('../AES_Milan/RIRs/SoundField_floor_W.mat')
-rirW = matW['SoundField_floor_W_RIRs'][:, 1]
-matX = sio.loadmat('../AES_Milan/RIRs/SoundField_floor_X.mat')
-rirX = matX['SoundField_floor_X_RIRs'][:, 1]
-matY = sio.loadmat('../AES_Milan/RIRs/SoundField_floor_Y.mat')
-rirY = matY['SoundField_floor_Y_RIRs'][:, 1]
-matZ = sio.loadmat('../AES_Milan/RIRs/SoundField_floor_Z.mat')
-rirZ = matZ['SoundField_floor_Z_RIRs'][:, 1]
-RIRs = np.empty([len(rirW), 4])
-RIRs = [rirW, rirX, rirY, rirZ]
-RIRs = np.transpose(np.array(RIRs))
+fs, RIRs = wavfile.read('./BFormat_BrigeWaterHall.wav')
+RIRs = np.array(RIRs)
 
 ##############################################################
 # RSAO estimation
 ##############################################################
-RoomDims = [23.97, 32.22, 21.89]
+x_dim = float(input('Input the length oh the x dimension of the room: '))
+y_dim = float(input('Input the length oh the y dimension of the room: '))
+z_dim = float(input('Input the length oh the z dimension of the room: '))
+RoomDims = [x_dim, y_dim, z_dim]
+#RoomDims = [23.97, 32.22, 21.89]  # This are the dimensions related to the example (i.e. Bridge Water Hall)
 
 # Defining the early reflection object
 EarlyReflections = EncoderSAOBFormat(RIRs=RIRs, discrete_mode='strongest')
@@ -82,13 +100,3 @@ JsonFile = GenerateJSON_RSAO(paramEarly=EarlyReflections.param, paramLate=LateRe
                              maxEarly=10, filename='BridgeWaterHall_ls2.json', objtype='pointreverb')
 JsonFile.getobjectvector_roomlibrary()
 JsonFile.savejson()
-
-
-##############################################################
-# Load objects
-##############################################################
-# with open('RSAO_Early_params', 'rb') as input:
-#     EarlyReflections = pickle.load(input)
-#
-# with open('RSAO_Late_params', 'rb') as input:
-#     LateReverb = pickle.load(input)
