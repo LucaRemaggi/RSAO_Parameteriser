@@ -30,7 +30,7 @@ import pickle
 ##############################################################
 # Loading RIRs
 ##############################################################
-fs, RIRs = wavfile.read('../ICA_SubjectiveTests/Kitchen_BFormat.wav')
+fs, RIRs = wavfile.read('./BFormat_BridgeWaterHall.wav')
 RIRs = np.array(RIRs)
 
 ##############################################################
@@ -67,6 +67,6 @@ with open('RSAO_Late_params', 'wb') as output:
 # Write json file containing BFormat-derived parameters
 ##############################################################
 JsonFile = GenerateJSON_RSAO(paramEarly=EarlyReflections.param, paramLate=LateReverb.param, name='testroom',
-                             maxEarly=20, filename='Kitchen_test.json', objtype='pointreverb')
+                             maxEarly=20, filename='BridgeWaterHall.json', objtype='pointreverb')
 JsonFile.getobjectvector_roomlibrary()
 JsonFile.savejson()
