@@ -1,3 +1,9 @@
+#
+# This class contains some algorithms that are useful for different aspects of the parameter estimation.
+#
+# Author: Luca Remaggi
+# Email: l.remaggi@surrey.ac.uk
+# 05/02/2018
 
 from scipy import signal
 import numpy as np

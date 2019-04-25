@@ -1,3 +1,9 @@
+#
+# This class is used to perform the segmentation of early reflections given RIRs.
+#
+# Author: Luca Remaggi
+# Email: l.remaggi@surrey.ac.uk
+# 05/02/2018
 
 import numpy as np
 from Algorithm_PeakDetection import Peakpicking
