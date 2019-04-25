@@ -46,12 +46,12 @@ class GenerateJSON_RSAO():
             # Instantiating another temporary dictionary that is going inside the other dictionary
             nbiquadparam = np.shape(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'])[0]
             for idx_biquadparam in range(0, nbiquadparam):
-                tmp = {'b0': '{:0.1f}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][0]),
-                       'b1': '{:0.1f}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][1]),
-                       'b2': '{:0.1f}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][2]),
-                       'a0': '{:0.1f}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][3]),
-                       'a1': '{:0.1f}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][4]),
-                       'a2': '{:0.1f}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][5])}
+                tmp = {'b0': '{:0.3e}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][0]),
+                       'b1': '{:0.3e}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][1]),
+                       'b2': '{:0.3e}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][2]),
+                       'a0': '{:0.3e}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][3]),
+                       'a1': '{:0.3e}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][4]),
+                       'a2': '{:0.3e}'.format(self.paramEarly['Reflection'+str(idx_refl)]['filtersos'][idx_biquadparam][5])}
 
                 tmpDictionary['biquadsos'].append(tmp)
 
