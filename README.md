@@ -6,8 +6,7 @@ INPUT: when running the main.py, you need to provide in input a .wav file, conta
 OUTPUT: main.py generates a .json file, where the RSAO parameters are written following the metadata structure that can be interpreted by the S3A object-based renderer (i.e. VISR).  
 
 Coded by: 
-Luca Remaggi
-CVSSP, University of Surrey
+Luca Remaggi, CVSSP, University of Surrey
 
 Public Release:
 2019
